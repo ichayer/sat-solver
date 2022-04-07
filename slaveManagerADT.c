@@ -122,8 +122,8 @@ int initializeSlaves(slaveManagerADT sm){
             //Pruebas
             close(parentToChildren[WRITE]);
             sleep(2);
-            char mensaje[100];
-            read(childrenToParent[READ], mensaje, 99);
+            char mensaje[200];
+            read(childrenToParent[READ], mensaje, 199);
             printf("%s", mensaje);
             // fin pruebas
 

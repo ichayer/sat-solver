@@ -6,5 +6,6 @@
 void perrorexit(char * fname)
 {
     perror(fname);
+    printf("lla");
     exit(EXIT_FAILURE);
 }
