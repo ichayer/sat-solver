@@ -17,17 +17,23 @@ main(int argc, char *argv[]){
 
     //slaveManagerADT sm = newSlaveManager(argv, 2, 2);
 
-    char * output[2] = {"test/prueba", "test/prueba"};
-    slaveManagerADT sm = newSlaveManager(output, 2, 2);
+    char * output[] = {"test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba","test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba","test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba"};
+    slaveManagerADT sm = newSlaveManager(output, 20);
 
     initializeSlaves(sm);
 
-    /*while(hasNextData(sm)){
+    char buffer[4096];
+    int read;
 
-    } */   
+    while(hasNextData(sm)){
+        read = retriveData(sm, buffer, 4096);
+        write(STDIN_FILENO, buffer, read);
+        write(STDIN_FILENO, "\n", 1);
+    }   
 
     waitSlaves(sm);
 
+    freeSlaveManager(sm);        
 
     return 0;
 }

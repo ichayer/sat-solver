@@ -15,7 +15,8 @@ typedef struct slaveManagerCDT {
     int slavesQty;
     int * fdread;      
     int * fdwrite;
-    int currentFile;
+    int slaveFiles; // qty of files that had been sended to the slaves
+    int appFiles;   // qty of files that the been sended to the app
 } slaveManagerCDT;
 
 
@@ -23,22 +24,21 @@ typedef struct slaveManagerCDT {
     1. Como se le asigna un nuevo fileName al esclavo una vez que termino? El problema es como identificar que termino. 
        Le puedo asignar otro archivo para que analice cuando remuevo la informacion del pipe? O tengo que seguir dando tareas aunque no lea?
     2. #define _GNU_SOURCE para reconocer getline??
-    3. Como manejar los errores? Una funcion q haga perror(nombre funcion) y exit(EXIT_FAILURE)?
 */
 
 
-slaveManagerADT newSlaveManager(char ** fileNames, int slavesQty, int filesQty){
-    if(slavesQty< 1 || filesQty < 1 || fileNames == NULL)
+slaveManagerADT newSlaveManager(char ** fileNames, int filesQty){
+    if(filesQty < 1 || fileNames == NULL)
         perrorexit("newSlaveManager");
     
 
     slaveManagerADT sm = calloc(1, sizeof(slaveManagerCDT));
     if (sm == NULL)
-        perrorexit("newSlaveManager");;
+        perrorexit("newSlaveManager");
 
     sm->fileNames = fileNames;
     sm->filesQty = filesQty;
-    sm->slavesQty = filesQty > slavesQty ? slavesQty : filesQty;
+    sm->slavesQty = filesQty/10 + 1;
     
     sm->slavesPids = malloc(sm->slavesQty * sizeof(int));
     if(sm->slavesPids == NULL){
@@ -61,6 +61,9 @@ slaveManagerADT newSlaveManager(char ** fileNames, int slavesQty, int filesQty){
         perrorexit("newSlaveManager");;
     }
 
+    sm->slaveFiles = 0;
+    sm->appFiles = 0;
+
     return sm;
 }
 
@@ -81,7 +84,10 @@ void remapfd(int * fd, int idxFrom, int fdTo){
 }
 
 int initializeSlaves(slaveManagerADT sm){
+
     for (int i = 0; i < sm->slavesQty; ++i){
+
+        //printf("Slave %d - %d\n", i, sm->slavesQty);
         int parentToChildren[2];
         int childrenToParent[2];
 
@@ -117,14 +123,17 @@ int initializeSlaves(slaveManagerADT sm){
             if (close(childrenToParent[WRITE]) == -1)
                 perrorexit("initializeSlaves");
 
-            write(parentToChildren[WRITE], sm->fileNames[i], strlen(sm->fileNames[i]));
+            write(parentToChildren[WRITE], sm->fileNames[2*i], strlen(sm->fileNames[i]));
+            write(parentToChildren[WRITE], "\n", 1);
+            write(parentToChildren[WRITE], sm->fileNames[2*i + 1], strlen(sm->fileNames[i]));
+            write(parentToChildren[WRITE], "\n", 1);
 
             //Pruebas
             close(parentToChildren[WRITE]);
-            sleep(2);
-            char mensaje[200];
-            read(childrenToParent[READ], mensaje, 199);
-            printf("%s", mensaje);
+            //sleep(2);
+            //char mensaje[300];
+            //read(childrenToParent[READ], mensaje, 299);
+            //printf("%s", mensaje);
             // fin pruebas
 
             sm->fdwrite[i] = childrenToParent[WRITE];
@@ -132,15 +141,28 @@ int initializeSlaves(slaveManagerADT sm){
             break;
         }
     }
-
     return sm->slavesQty;
 }
 
 int hasNextData(slaveManagerADT sm){
-    return sm->currentFile <= sm->filesQty;
+    return sm->appFiles < sm->filesQty;
 }
 
 
+int retriveData(slaveManagerADT sm, char * buffer, int bufferLimit){
+    char * mockData = "File name: test/prueba, slave ID: 21303, Number of variables: 5, Number of clauses: 3, CPU time : 0 s, SATISFIABLE ";
+    strncpy(buffer,mockData,bufferLimit-1);
+    sm->appFiles++;
+    return strlen(mockData);
+}
+
+
+void freeSlaveManager(slaveManagerADT sm){
+    free(sm->fdread);
+    free(sm->fdwrite);
+    free(sm->slavesPids);
+    free(sm);
+}
 
 void waitSlaves(slaveManagerADT sm){
     int state;
