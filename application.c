@@ -39,13 +39,16 @@ main(int argc, char *argv[]){
 
     // TO DO: remove SIZE constant
     posShmADT shm = newPosShmADT(SHM_NAME, SEM_NAME, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR, SIZE, PROT_WRITE);
+
+    puts(SHM_NAME);
+    puts(SEM_NAME);
+    fflush(stdout);
     
     // TO DO: remove testing variables
-    char buffer[4096];
-    int read;
+    char buffer[MAX_BUFFER];
 
     while(hasNextData(sm)){
-        read = retriveData(sm, buffer, 4096);
+        retriveData(sm, buffer, MAX_BUFFER);
         shmWrite(shm, buffer);
     }   
 
