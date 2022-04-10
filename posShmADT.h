@@ -27,7 +27,7 @@ posShmADT newPosShmADT(const char * shm_name, const char * sem_name, int oflags,
 /**
  * @brief Unmaps the shared memory
  *        Frees semaphore's resources
- *        Unlinks the shared memory and sempahore if @param unlink is true
+ *        Unlinks the shared memory and sempahore
  *        Frees the handler
  * 
  * @param shm a posShmADT previously created
