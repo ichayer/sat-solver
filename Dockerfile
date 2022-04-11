@@ -6,4 +6,5 @@ LABEL maintainer="ichayer <ichayer@itba.edu.ar>"
 WORKDIR /code
 
 # Install dependencies
+RUN pvs-studio-analyzer credentials "PVS-Studio Free" "FREE-FREE-FREE-FREE"
 RUN apt -y install minisat

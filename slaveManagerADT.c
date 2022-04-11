@@ -1,3 +1,12 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+
+#include <stdio.h>
+#include <sys/types.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <string.h>
 #include "slaveManagerADT.h"
 #include "myerror.h"
 
@@ -153,7 +162,7 @@ int retriveData(slaveManagerADT sm, char * buffer, int bufferLimit){
     sm->appFiles++;
 
     int i=0;
-    int c;
+    char c;
 
     while((read(sm->fdread[idx], &c, 1))>0 && c!='>' && c!='\0' && i<(bufferLimit-2)){
         buffer[i++] = c;
