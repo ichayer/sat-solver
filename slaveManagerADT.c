@@ -162,7 +162,7 @@ int retriveData(slaveManagerADT sm, char * buffer, int bufferLimit){
     sm->appFiles++;
 
     int i=0;
-    int c;
+    char c;
 
     while((read(sm->fdread[idx], &c, 1))>0 && c!='>' && c!='\0' && i<(bufferLimit-2)){
         buffer[i++] = c;
