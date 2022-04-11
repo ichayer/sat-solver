@@ -1,3 +1,12 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+
+#include <stdio.h>
+#include <sys/types.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <string.h>
 #include "slaveManagerADT.h"
 #include "myerror.h"
 

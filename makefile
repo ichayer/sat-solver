@@ -40,19 +40,20 @@ View:
 
 clean:
 	@rm -rf $(OBJECTS) $(EXECUTABLES)
-	@rm -rf report.tasks PVS-Studio.log strace_out cppout.txt *.valgrind
+	@rm -rf check
 
-test: 
-#   Put the result on cppout.txt
-	@cppcheck --quiet --enable=all --force --inconclusive . 2> cppout.txt
-#	Put the result on report.tasks
+check:
+	@mkdir check
+	@cppcheck --quiet --enable=all --force --inconclusive . 2> ./check/cppout.txt
+
 	@pvs-studio-analyzer trace -- make
 	@pvs-studio-analyzer analyze	
-	plog-converter -a '64:1,2,3;GA:1,2,3;OP:1,2,3' -t tasklist -o report.tasks PVS-Studio.log 
-#	Put the result on __.valgrind	
-	@valgrind --leak-check=full --show-leak-kinds=all -v ./slave 2> slave.valgrind
-	@valgrind --leak-check=full --show-leak-kinds=all -v ./solve 2> solve.valgrind
-	@valgrind --leak-check=full --show-leak-kinds=all -v ./view 2> view.valgrind
+	@plog-converter -a '64:1,2,3;GA:1,2,3;OP:1,2,3' -t tasklist -o ./check/report.tasks ./PVS-Studio.log 
+	
+	@mv strace_out check
+	@rm PVS-Studio.log
 
-
+	@valgrind --leak-check=full --show-leak-kinds=all -v ./solve test/* 2> ./check/solve.valgrind
+	@valgrind --leak-check=full --show-leak-kinds=all -v ./solve test/* > ./view  2> ./check/pipe.valgrind	
+	
 .PHONY: all clean test  
