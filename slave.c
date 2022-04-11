@@ -9,13 +9,14 @@
 #include <string.h>
 #include "myerror.h"
 
-#define INITIAL_OUTPUT_LENGTH 4096
+#define MAX_OUTPUT_LENGTH 4096
 #define MAX_COMMAND_LENGTH 4096
 #define MINISAT_COMMAND "minisat %s | grep -o -e \"Number of.*[0-9]\\+\" -e \"CPU time.*\" -e \".*SATISFIABLE\""
 
 /*
 ** Cosas asumidas: 
 **  - El comando a ejecutar no tendra mas de 4096 caracteres.
+**  - El output no sera mayor a 4096 caracteres. Ver por que asumimos esto
 **
 ** Problemas: Hubo que agregar el define de gnu para que funcione bien el getline.
 ** 
@@ -23,7 +24,7 @@
 ** - Para sacar el \n de los paths: https://stackoverflow.com/questions/2693776/removing-trailing-newline-character-from-fgets-input 
 **/
 
-void formatOutput(char ** minisatOutput, int initialDim, FILE * commandStream);
+void formatOutput(char * minisatOutput, FILE * commandStream, int maxDim);
 
 int
 main(int argc, char *argv[]){
@@ -32,6 +33,8 @@ main(int argc, char *argv[]){
     char * fileName = NULL;
     size_t lineCap = 0;
     ssize_t lineLen;  
+
+    setvbuf(stdout, NULL, _IONBF, 0);
    
     while ((lineLen = getline(&fileName, &lineCap, stdin)) > 0){
 
@@ -47,44 +50,29 @@ main(int argc, char *argv[]){
         if(commandStream==NULL)
             perrorexit("popen");
         
-        char * minisatOutput = NULL;
-        formatOutput(&minisatOutput, 0, commandStream);      
+        char minisatOutput[MAX_OUTPUT_LENGTH];
+        formatOutput(minisatOutput, commandStream,MAX_OUTPUT_LENGTH);      
 
-        printf("File name: %s, slave ID: %d, %s \n", fileName, getpid(), minisatOutput);
-        free(minisatOutput);        
+        printf("< File name: %s, slave ID: %d, %s >", fileName, getpid(), minisatOutput);        
     }
     
     free(fileName);
+    close(STDIN_FILENO);
     return 0;
 }
 
-void formatOutput(char ** minisatOutput, int dim, FILE * commandStream){
-
-    int i = 0;
+void formatOutput(char * minisatOutput,  FILE * commandStream, int maxDim){
     int c;
+    int i=0;
 
-    if(*minisatOutput == NULL){
-        *minisatOutput = malloc((sizeof(char)) * INITIAL_OUTPUT_LENGTH);
-        dim = INITIAL_OUTPUT_LENGTH;
-    }
-        
-    char * out = *minisatOutput;
-
-    while((c=getc(commandStream))>0){
-
-        if(i == dim){
-            dim+= INITIAL_OUTPUT_LENGTH;
-            out = realloc(out, dim);
-        }
+    while((c=getc(commandStream))>0 && i<maxDim){
 
         if(c=='\n'){
-            out[i++] = ',';
-            out[i++] = ' ';
+            minisatOutput[i++] = ',';
+            minisatOutput[i++] = ' ';
         }
-        else if(i==0 || c!=' ' || out[i-1]!=' ')
-            out[i++] = c;
+        else if(i==0 || c!=' ' || minisatOutput[i-1]!=' ')
+            minisatOutput[i++] = c;
     }
-    out[i-2] = 0;
-
-    *minisatOutput = out;
+    minisatOutput[i-2] = 0;
 }
