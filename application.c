@@ -11,17 +11,17 @@ int
 main(int argc, char *argv[]){
 
 
-    //setvbuf(stdout, NULL, _IONBF, 0);
+    setvbuf(stdout, NULL, _IONBF, 0);
 
-    sleep(VIEW_PROCES_WAITTIME);
-
+    //sleep(VIEW_PROCES_WAITTIME);
+    
     //slaveManagerADT sm = newSlaveManager(argv, 2, 2);
 
     char * output[] = {"test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba","test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba","test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba", "test/prueba"};
     slaveManagerADT sm = newSlaveManager(output, 20);
 
     initializeSlaves(sm);
-
+    
     char buffer[4096];
     int read;
 
@@ -29,11 +29,9 @@ main(int argc, char *argv[]){
         read = retriveData(sm, buffer, 4096);
         write(STDIN_FILENO, buffer, read);
         write(STDIN_FILENO, "\n", 1);
-    }   
+    }
 
-    waitSlaves(sm);
-
-    freeSlaveManager(sm);        
+    freeSlaveManager(sm);  
 
     return 0;
 }
