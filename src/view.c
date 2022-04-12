@@ -13,7 +13,8 @@
 #include <string.h>
 
 /* Local headers */
-#include "posShmADT.h"
+#include "./include/posShmADT.h"
+#include "./include/myerror.h"
 
 // TO DO: remove this constant
 #define SIZE 81920
@@ -30,14 +31,12 @@ main(int argc, char * argv[]){
         char *sem_name = NULL;
 
         if(getline(&shm_name, &lineCap, stdin) <= 0){
-            perror("Error in getline function\n");
-            exit(1);
+            perrorExit("Error in getline function");
         }
 
         if(getline(&sem_name, &lineCap, stdin) <= 0){
             free(shm_name);
-            perror("Error in getline function\n");
-            exit(1);
+            perrorExit("Error in getline function");
         }
 
         // https://stackoverflow.com/questions/2693776/removing-trailing-newline-character-from-fgets-input
@@ -57,15 +56,15 @@ main(int argc, char * argv[]){
         shm = newPosShmADT(argv[1], argv[2], O_RDWR, 0, SIZE, PROT_READ);
     }
 
-    char buff[MAX_BUFFER];
+    char buffer[MAX_BUFFER];
 
     // TO DO: How do we obtain the total quantity of files we are going to process? 
     // Is there any way to avoid using stdin?
 
     // TO DO: remove i<20, its just for testing
     for(int i=0; i < 20; i++){
-        shmRead(shm, buff);
-        printf("%s\n", buff);
+        shmRead(shm, buffer);
+        printf("%s\n", buffer);
     }
     
     shmClose(shm);

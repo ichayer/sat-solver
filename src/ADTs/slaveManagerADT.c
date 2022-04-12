@@ -1,14 +1,17 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 
+/* Standard library */
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <string.h>
-#include "slaveManagerADT.h"
-#include "myerror.h"
+
+/* Local headers */
+#include "../include/myerror.h"
+#include "../include/slaveManagerADT.h"
 
 
 typedef struct slaveManagerCDT {
@@ -49,12 +52,12 @@ void setFds(int * vec, int qty, fd_set * rfds);
 
 slaveManagerADT newSlaveManager(char ** fileNames, int filesQty){
     if(filesQty < 1 || fileNames == NULL)
-        perrorexit("newSlaveManager");
+        perrorExit("Invalid parameters for newSlaveManager");
     
 
     slaveManagerADT sm = calloc(1, sizeof(slaveManagerCDT));
     if (sm == NULL)
-        perrorexit("newSlaveManager");
+        perrorExit("Error initializing newSlaveManager");
 
     sm->fileNames = fileNames;
     sm->filesQty = filesQty;
@@ -63,14 +66,14 @@ slaveManagerADT newSlaveManager(char ** fileNames, int filesQty){
     sm->slavesPids = malloc(sm->slavesQty * sizeof(int));
     if(sm->slavesPids == NULL){
         free(sm);
-        perrorexit("newSlaveManager");
+        perrorExit("Error in malloc function");
     }
 
     sm->fdread = malloc(sm->slavesQty * sizeof(int));
     if(sm->fdread == NULL){
         free(sm);
         free(sm->slavesPids);
-        perrorexit("newSlaveManager");;
+        perrorExit("Error in malloc function");
     }
     
     sm->fdwrite = malloc(sm->slavesQty * sizeof(int));
@@ -78,7 +81,7 @@ slaveManagerADT newSlaveManager(char ** fileNames, int filesQty){
         free(sm);
         free(sm->slavesPids);
         free(sm->fdread);
-        perrorexit("newSlaveManager");;
+        perrorExit("Error in malloc function");
     }
 
     FD_ZERO(&(sm->rfds));
@@ -98,10 +101,10 @@ int initializeSlaves(slaveManagerADT sm){
         int childrenToParent[2];
 
         if (pipe(parentToChildren) == -1)
-            perrorexit("initializeSlaves");
+            perrorExit("Error creating pipe");
 
         if (pipe(childrenToParent) == -1)
-            perrorexit("initializeSlaves");
+            perrorExit("Error creating pipe");
 
         int pid = fork();
 
@@ -113,23 +116,23 @@ int initializeSlaves(slaveManagerADT sm){
         case 0:
 
             if (close(parentToChildren[WRITE]) == -1)
-                perrorexit("initializeSlaves");
+                perrorExit("Error closing pipe");
 
             if (close(childrenToParent[READ]) == -1)
-                perrorexit("initializeSlaves");
+                perrorExit("Error closing pipe");
 
             remapfd(parentToChildren, READ, STDIN_FILENO);
             remapfd(childrenToParent, WRITE, STDOUT_FILENO);
 
             execv("./slave", (char **){NULL});
-            perrorexit("initializeSlaves");
+            perrorExit("./slave");
             
         default:
             if (close(parentToChildren[READ]) == -1)
-                perrorexit("initializeSlaves");
+                perrorExit("Error closing pipe");
 
             if (close(childrenToParent[WRITE]) == -1)
-                perrorexit("initializeSlaves");
+                perrorExit("Error closing pipe");
 
             sm->fdread[i] = childrenToParent[READ];
             sm->fdwrite[i] = parentToChildren[WRITE];
@@ -152,7 +155,7 @@ int retriveData(slaveManagerADT sm, char * buffer, int bufferLimit){
         setFds(sm->fdread, sm->slavesQty, &sm->rfds);
         if((sm->avilableData = select(sm->maxfd + 1, &sm->rfds, NULL, NULL, NULL))==-1){
             printf("%d\n", sm->avilableData);
-            perrorexit("select");
+            perrorExit("Error in select function");
         }
         sm->lastIndexRetrived = -1;
     }
@@ -197,10 +200,10 @@ void remapfd(int * fd, int idxFrom, int fdTo){
     if (fd[idxFrom] != fdTo){
         
         if (dup2(fd[idxFrom], fdTo) == -1)
-            perrorexit("initializeSlaves");
+            perrorExit("Error in dup2 function");
 
         if (close(fd[idxFrom]) == -1)
-            perrorexit("initializeSlaves");
+            perrorExit("Error closing file descriptor");
     
     }
 }

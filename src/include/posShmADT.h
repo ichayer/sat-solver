@@ -41,17 +41,17 @@ void shmClose(posShmADT shm);
  *        
  * 
  * @param shm a posShmADT previously created
- * @param buff string to be written into the shared memory
+ * @param buffer string to be written into the shared memory
  */
-void shmWrite(posShmADT shm, char * buff);
+void shmWrite(posShmADT shm, char * buffer);
 
 /**
  * @brief Blocking function
  *        Reads from the shared memory the last read position
  * 
  * @param shm a posShmADT previously created
- * @param buff buffer to retrieve string from the shared memory
+ * @param buffer buffer to retrieve string from the shared memory
  */
-void shmRead(posShmADT shm, char * buff);
+void shmRead(posShmADT shm, char * buffer);
 
 #endif

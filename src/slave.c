@@ -2,6 +2,8 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 
 #define _GNU_SOURCE
+
+/* Standard library */
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdlib.h>
@@ -10,7 +12,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
-#include "myerror.h"
+
+/* Local headers */
+#include "./include/myerror.h"
 
 #define MAX_OUTPUT_LENGTH 4096
 #define MAX_COMMAND_LENGTH 4096
@@ -46,12 +50,12 @@ main(int argc, char *argv[]){
         char command[MAX_COMMAND_LENGTH];
 
         if (sprintf(command, MINISAT_COMMAND, fileName) < 0){
-            perrorexit("sprintf");
+            perrorExit("Error in sprintf function");
         }
         
         FILE * commandStream = popen(command, "r");
         if(commandStream==NULL)
-            perrorexit("popen");
+            perrorExit("Error in popen function");
         
         char minisatOutput[MAX_OUTPUT_LENGTH];
         formatOutput(minisatOutput, commandStream,MAX_OUTPUT_LENGTH);      

@@ -1,28 +1,21 @@
 GCC = gcc
 GCCFLAGS = -g -Wall -std='c99' -lpthread -lrt
 
-OBJECTS := $(wildcard *.o)
 EXECUTABLES := solve slave view
 
 EXEC = Application Slave View
 
 APPLICATION_C = application.c
-APPLICATION_O = application.o
 
 SLAVE_C = slave.c
-SLAVE_O = slave.o
 
 VIEW_C = view.c
-VIEW_O = view.o
 
-SMANAGER_C = slaveManagerADT.c
-SMANAGER_O = slaveManagerADT.o
+SMANAGER_C = ADTs/slaveManagerADT.c
 
-POSSHMADT_C = posShmADT.c
-POSSHMADT_O = posShmADT.o
+POSSHMADT_C = ADTs/posShmADT.c
 
 ERRORS_C = myerror.c
-ERRORS_O = myerror.o
 
 all: $(EXEC)
 
@@ -39,7 +32,7 @@ View:
 	@echo "View successfully compiled"
 
 clean:
-	@rm -rf $(OBJECTS) $(EXECUTABLES)
+	@rm -rf $(EXECUTABLES)
 	@rm -rf check
 
 check:
@@ -53,7 +46,8 @@ check:
 	@mv strace_out check
 	@rm PVS-Studio.log
 
-	@valgrind --leak-check=full --show-leak-kinds=all -v ./solve test/* 2> ./check/solve.valgrind
+	@valgrind --leak-check=full --show-leak-kinds=all -v ./solve test/* > /dev/null 2> ./check/solve.valgrind
 	@valgrind --leak-check=full --show-leak-kinds=all -v ./solve test/* > ./view  2> ./check/pipe.valgrind	
+	@rm -rf $(EXECUTABLES)
 	
-.PHONY: all clean test  
+.PHONY: all clean check
