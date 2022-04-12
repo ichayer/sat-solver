@@ -28,8 +28,9 @@ typedef struct slaveManagerCDT {
     int avilableData;       // rfds with avilable data
     int lastIndexRetrived;  // index of the last fd to read data from
     
-    int slaveFiles; // qty of files that had been sended to the slaves
-    int appFiles;   // qty of files that the been sended to the app
+    int * pendingFiles; // files that each slave has pending to process
+    int slaveFiles;     // qty of files that had been sended to the slaves
+    int appFiles;       // qty of files that the been sended to the app
 } slaveManagerCDT;
 
 
@@ -81,6 +82,15 @@ slaveManagerADT newSlaveManager(char ** fileNames, int filesQty){
         free(sm);
         free(sm->slavesPids);
         free(sm->fdread);
+        perrorExit("Error in malloc function");
+    }
+
+    sm->pendingFiles = malloc(sm->slavesQty * sizeof(int));
+    if(sm->pendingFiles == NULL){
+        free(sm);
+        free(sm->slavesPids);
+        free(sm->fdread);
+        free(sm->fdwrite);
         perrorExit("Error in malloc function");
     }
 
@@ -170,11 +180,12 @@ int retriveData(slaveManagerADT sm, char * buffer, int bufferLimit){
     while((read(sm->fdread[idx], &c, 1))>0 && c!='>' && c!='\0' && i<(bufferLimit-2)){
         buffer[i++] = c;
     }
+    sm->pendingFiles[idx]--;
     buffer[i++] = '>';
     buffer[i] = 0;
 
-    if(sm->slaveFiles < sm->filesQty)
-        deliverFile(sm, idx);
+    if(sm->slaveFiles < sm->filesQty && !sm->pendingFiles[idx])
+        deliverFile(sm, idx);  
 
     return i;
 }
@@ -184,7 +195,7 @@ void freeSlaveManager(slaveManagerADT sm){
     
     for(int i=0 ; i<sm->slavesQty ; ++i){
         close(sm->fdwrite[i]);
-        //close(sm->fdread[i]);
+        close(sm->fdread[i]);
     }
     
     free(sm->fdread);
@@ -226,6 +237,7 @@ void deliverFile(slaveManagerADT sm, int slaveIdx){
         write(sm->fdwrite[slaveIdx], sm->fileNames[sm->slaveFiles], strlen(sm->fileNames[sm->slaveFiles]));
         write(sm->fdwrite[slaveIdx], "\n", 1);
         sm->slaveFiles++;
+        sm->pendingFiles[slaveIdx]++;
     }
 }
 
