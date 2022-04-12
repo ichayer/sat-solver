@@ -11,9 +11,9 @@
 #include <sys/stat.h>
 
 /* Local headers */
-#include "slaveManagerADT.h"
-#include "posShmADT.h"
-#include "myerror.h"
+#include "./include/slaveManagerADT.h"
+#include "./include/posShmADT.h"
+#include "./include/myerror.h"
 
 /* Constants */
 #define VIEW_PROCES_WAITTIME 2
@@ -29,13 +29,10 @@ main(int argc, char *argv[]){
     setvbuf(stdout, NULL, _IONBF, 0);
 
     if(1 == argc){
-        fprintf(stderr,"You must input at least one file\n");
-        exit(1);
+        perrorExit("You must input at least one file");
     }
 
     sleep(VIEW_PROCES_WAITTIME);
-
-    //slaveManagerADT sm = newSlaveManager(argv, 2, 2);
 
     char * output[] = {"test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt","test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt","test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt"};
     slaveManagerADT sm = newSlaveManager(output, 20);
@@ -49,7 +46,6 @@ main(int argc, char *argv[]){
     puts(SEM_NAME);
     fflush(stdout);
     
-    // TO DO: remove testing variables
     char buffer[MAX_BUFFER];
 
     while(hasNextData(sm)){
@@ -58,7 +54,6 @@ main(int argc, char *argv[]){
     }   
 
     freeSlaveManager(sm);   
-
     shmClose(shm);   
 
     return 0;

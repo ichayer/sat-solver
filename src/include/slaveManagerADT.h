@@ -1,6 +1,7 @@
 #ifndef __SLAVE_MANAGER_ADT_H__
 #define __SLAVE_MANAGER_ADT_H__
 
+/* Standard library */
 #include <sys/select.h>
 #include <stdio.h>
 #include <sys/types.h>

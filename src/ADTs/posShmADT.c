@@ -16,7 +16,8 @@
 #include <semaphore.h>
 
 /* Local headers */
-#include "posShmADT.h"
+#include "../include/myerror.h"
+#include "../include/posShmADT.h"
 
 typedef struct posShmCDT {
     char sem_name[MAX_NAME_LENGTH];     // semaphore name
@@ -30,23 +31,19 @@ typedef struct posShmCDT {
 
 
 static void freeShm(posShmADT shm){
-
     free(shm);
 }
 
 static void unlinkSem(posShmADT shm){
-
     if(-1 == sem_unlink(shm->sem_name)){
-        perror("Error unlinking semaphore\n");
-        exit(1);
+        perrorExit("Error unlinking semaphore");
     }
 }
 
 static void unlinkShm(posShmADT shm){
 
     if(-1 == shm_unlink(shm->shm_name)){
-        perror("Error unlinking shared memory\n");
-        exit(1);
+        perrorExit("Error unlinking shared memory");
     }
 }
 
@@ -56,8 +53,7 @@ posShmADT newPosShmADT(const char * shm_name, const char * sem_name, int oflags,
     shm->shmSize = shmSize;
     
     if(NULL == shm) {
-        perror("Error initializing shared memory\n");
-        exit(1);
+        perrorExit("Error initializing shared memory");
     }
     
     strcpy(shm->sem_name, sem_name);
@@ -66,26 +62,22 @@ posShmADT newPosShmADT(const char * shm_name, const char * sem_name, int oflags,
     int shm_fd = shm_open(shm_name, oflags, mode);
     if(-1 == shm_fd){
         freeShm(shm);
-        perror("Error opening shared memory\n");
-        exit(1);
+        perrorExit("Error opening shared memory");
     }
 
     if(oflags & O_CREAT){ 
         if(-1 == ftruncate(shm_fd, shm->shmSize)){
             unlinkShm(shm);
             freeShm(shm);
-            perror("Error in ftruncate()\n");
-            exit(1);
+            perrorExit("Error in ftruncate function");
         }
     }
-
 
     shm->shm_address = mmap(NULL, shm->shmSize, prot, MAP_SHARED, shm_fd, 0);
     if(MAP_FAILED == shm->shm_address){
         unlinkShm(shm);
         freeShm(shm);
-        perror("Error in mmap()\n");
-        exit(1);
+        perrorExit("Error in mmap function");
     }
 
     shm->shm_current_address = shm->shm_address;
@@ -93,8 +85,7 @@ posShmADT newPosShmADT(const char * shm_name, const char * sem_name, int oflags,
     if(close(shm_fd)==-1){
         unlinkShm(shm);
         freeShm(shm);
-        perror("Error closing fd\n");
-        exit(1);
+        perrorExit("Error closing file descriptor");
     }
 
     if(oflags & O_CREAT){ 
@@ -102,8 +93,7 @@ posShmADT newPosShmADT(const char * shm_name, const char * sem_name, int oflags,
         if(SEM_FAILED == shm->sem){
             unlinkShm(shm);
             freeShm(shm);
-            perror("Error creating semaphore\n");
-            exit(1);
+            perrorExit("Error creating semaphore");
         }
         shm->creator = true;
 
@@ -112,8 +102,7 @@ posShmADT newPosShmADT(const char * shm_name, const char * sem_name, int oflags,
         if(SEM_FAILED == shm->sem){
             unlinkShm(shm);
             freeShm(shm);
-            perror("Error opening semaphore\n");
-            exit(1);
+            perrorExit("Error opening semaphore");
         }
         shm->creator = false;
     }   
@@ -121,46 +110,42 @@ posShmADT newPosShmADT(const char * shm_name, const char * sem_name, int oflags,
     return shm;
 } 
 
-void shmRead(posShmADT shm, char * buff){
+void shmRead(posShmADT shm, char * buffer){
  
     if(-1 == sem_wait(shm->sem)){
-        perror("Error reading shared memory\n");
         unlinkSem(shm);
         unlinkShm(shm);
         shmClose(shm);
-        exit(1);
+        perrorExit("Error reading shared memory");
     }
 
-    shm->shm_current_address += sprintf(buff, "%s", shm->shm_current_address) + 1;
+    shm->shm_current_address += sprintf(buffer, "%s", shm->shm_current_address) + 1;
 }
 
-void shmWrite(posShmADT shm, char * buff){    
+void shmWrite(posShmADT shm, char * buffer){    
 
-    shm->shm_current_address += sprintf(shm->shm_current_address, "%s", buff) + 1;
+    shm->shm_current_address += sprintf(shm->shm_current_address, "%s", buffer) + 1;
 
     if(-1 == sem_post(shm->sem)){
-        perror("Error writing shared memory\n");
         shmClose(shm);
-        exit(1);
+        perrorExit("Error writing shared memory");
     }
 }
 
 void shmClose(posShmADT shm){
 
     if(-1 == munmap(shm->shm_address, shm->shmSize)){
-        perror("Error unmapping address\n");
         unlinkSem(shm);
         unlinkShm(shm);
         freeShm(shm);
-        exit(1);
+        perrorExit("Error unmapping address");
     }
     
     if(-1 == sem_close(shm->sem)){
         unlinkSem(shm);
         unlinkShm(shm);
         freeShm(shm);
-        perror("Error closing sem\n");
-        exit(1);
+        perrorExit("Error closing sem");
     }
 
     if(shm->creator){
