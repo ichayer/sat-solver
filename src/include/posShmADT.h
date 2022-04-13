@@ -1,12 +1,9 @@
 #ifndef __POS_SHM_ADT_H__
 #define __POS_SHM_ADT_H__
 
-/* Standard library */
-#include <stdbool.h>
-
 /* Constants */
-#define MAX_NAME_LENGTH 100
-#define MAX_BUFFER 4096
+#define SHM_NAME "myShm"
+#define SEM_NAME "mySem"
 
 typedef struct posShmCDT * posShmADT;
 

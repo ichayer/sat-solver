@@ -15,20 +15,20 @@ SMANAGER_C = ADTs/slaveManagerADT.c
 
 POSSHMADT_C = ADTs/posShmADT.c
 
-ERRORS_C = myerror.c
+LIB_C = lib.c
 
 all: $(EXEC)
 
 Slave:	
-	@$(GCC) $(GCCFLAGS) $(SLAVE_C) $(ERRORS_C) -o slave
+	@$(GCC) $(GCCFLAGS) $(SLAVE_C) $(LIB_C) -o slave
 	@echo "Slave successfully compiled"
 
 Application:	
-	@$(GCC) $(GCCFLAGS)  $(SMANAGER_C) $(ERRORS_C) $(APPLICATION_C) $(POSSHMADT_C) -o solve
+	@$(GCC) $(GCCFLAGS)  $(SMANAGER_C) $(LIB_C) $(APPLICATION_C) $(POSSHMADT_C) -o solve
 	@echo "Solve successfully compiled"
 
 View:
-	@$(GCC) $(GCCFLAGS) $(ERRORS_C) $(VIEW_C) $(POSSHMADT_C) -o view
+	@$(GCC) $(GCCFLAGS) $(LIB_C) $(VIEW_C) $(POSSHMADT_C) -o view
 	@echo "View successfully compiled"
 
 clean:
@@ -46,8 +46,8 @@ check:
 	@mv strace_out check
 	@rm PVS-Studio.log
 
-	@valgrind --leak-check=full --show-leak-kinds=all -v ./solve test/* > /dev/null 2> ./check/solve.valgrind
-	@valgrind --leak-check=full --show-leak-kinds=all -v ./solve test/* > ./view  2> ./check/pipe.valgrind	
+	@valgrind --leak-check=full --show-leak-kinds=all -v ./solve samples/* > /dev/null 2> ./check/solve.valgrind
+	@valgrind --leak-check=full --show-leak-kinds=all -v ./solve samples/* > ./view  2> ./check/pipe.valgrind	
 	@rm -rf $(EXECUTABLES)
 	
 .PHONY: all clean check

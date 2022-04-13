@@ -10,7 +10,7 @@
 #include <string.h>
 
 /* Local headers */
-#include "../include/myerror.h"
+#include "../include/lib.h"
 #include "../include/slaveManagerADT.h"
 
 
