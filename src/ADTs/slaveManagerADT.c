@@ -130,6 +130,15 @@ int initializeSlaves(slaveManagerADT sm){
 
             if (close(childrenToParent[READ]) == -1)
                 perrorExit("Error closing pipe");
+            
+            // Close pipes that comunicate with previous slaves
+            for(int j=0 ; j<i ; ++j){
+                if (close(sm->fdread[j]) == -1)
+                    perrorExit("Error closing pipe");
+
+                if (close(sm->fdwrite[j]) == -1)
+                    perrorExit("Error closing pipe");
+            }
 
             remapfd(parentToChildren, READ, STDIN_FILENO);
             remapfd(childrenToParent, WRITE, STDOUT_FILENO);
