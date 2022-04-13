@@ -13,18 +13,12 @@
 /* Local headers */
 #include "./include/slaveManagerADT.h"
 #include "./include/posShmADT.h"
-#include "./include/myerror.h"
+#include "./include/lib.h"
 
 /* Constants */
 #define VIEW_PROCES_WAITTIME 2
-#define SHM_NAME "shm_name"
-#define SEM_NAME "sem_name"
 
-// TO DO: remove this constant
-#define SIZE 81920
-
-int
-main(int argc, char *argv[]){
+int main(int argc, char *argv[]){
 
     setvbuf(stdout, NULL, _IONBF, 0);
 
@@ -32,26 +26,26 @@ main(int argc, char *argv[]){
         perrorExit("You must input at least one file");
     }
 
+    int filesQty = argc - 1;
+    int size = SLAVES_MAX_OUTPUT * filesQty;
+    char ** files = &argv[1];
+
+    printf("%d\n", filesQty);
+
+    posShmADT shm = newPosShmADT(SHM_NAME, SEM_NAME, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR, size, PROT_WRITE);
+
     sleep(VIEW_PROCES_WAITTIME);
 
-    char * output[] = {"test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt","test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt","test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt", "test/mockfile.txt"};
-    slaveManagerADT sm = newSlaveManager(output, 20);
+    slaveManagerADT sm = newSlaveManager(files, filesQty);
 
     initializeSlaves(sm);
 
-    // TO DO: remove SIZE constant
-    posShmADT shm = newPosShmADT(SHM_NAME, SEM_NAME, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR, SIZE, PROT_WRITE);
-
-    puts(SHM_NAME);
-    puts(SEM_NAME);
-    fflush(stdout);
-    
-    char buffer[MAX_BUFFER];
+    char buffer[SLAVES_MAX_OUTPUT];
 
     while(hasNextData(sm)){
-        retriveData(sm, buffer, MAX_BUFFER);
+        retriveData(sm, buffer, SLAVES_MAX_OUTPUT);
         shmWrite(shm, buffer);
-    }   
+    } 
 
     freeSlaveManager(sm);   
     shmClose(shm);   

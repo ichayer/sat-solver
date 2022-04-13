@@ -1,12 +1,9 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 
-/* Defines */
-#define _GNU_SOURCE
-
 /* Standard library */
+#define _GNU_SOURCE
 #include <stdio.h>
-#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <fcntl.h> 
@@ -14,18 +11,19 @@
 #include <sys/mman.h>
 #include <stdlib.h>
 #include <semaphore.h>
+#include <stdbool.h>
 
 /* Local headers */
-#include "../include/myerror.h"
+#include "../include/lib.h"
 #include "../include/posShmADT.h"
 
 typedef struct posShmCDT {
-    char sem_name[MAX_NAME_LENGTH];     // semaphore name
-    char shm_name[MAX_NAME_LENGTH];     // shared memory name
-    sem_t * sem;                        // semaphore
-    int shmSize;                        // shared memory size
-    char * shm_address;                 // shared memory pointer (must be preserved to munmap)
-    char * shm_current_address;         // dynamic pointer
+    const char * sem_name;     
+    const char * shm_name;    
+    sem_t * sem;                        
+    int shmSize;                        
+    char * shm_address;                 
+    char * shm_current_address;         
     bool creator;                       
 } posShmCDT;
 
@@ -50,14 +48,14 @@ static void unlinkShm(posShmADT shm){
 posShmADT newPosShmADT(const char * shm_name, const char * sem_name, int oflags, int mode, int shmSize, int prot) {
 
     posShmADT shm = calloc(1, sizeof(posShmCDT)); 
-    shm->shmSize = shmSize;
     
     if(NULL == shm) {
         perrorExit("Error initializing shared memory");
     }
     
-    strcpy(shm->sem_name, sem_name);
-    strcpy(shm->shm_name, shm_name);
+    shm->sem_name = sem_name;
+    shm->shm_name = shm_name;
+    shm->shmSize = shmSize;
 
     int shm_fd = shm_open(shm_name, oflags, mode);
     if(-1 == shm_fd){
