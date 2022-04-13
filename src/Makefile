@@ -46,8 +46,8 @@ check:
 	@mv strace_out check
 	@rm PVS-Studio.log
 
-	@valgrind --leak-check=full --show-leak-kinds=all -v ./solve samples/* > /dev/null 2> ./check/solve.valgrind
-	@valgrind --leak-check=full --show-leak-kinds=all -v ./solve samples/* > ./view  2> ./check/pipe.valgrind	
+	@valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -v ./solve samples/* > /dev/null 2> ./check/solve.valgrind
+	@valgrind --leak-check=full --show-leak-kinds=all  --track-origins=yes -v ./solve samples/* > ./view  2> ./check/pipe.valgrind	
 	@rm -rf $(EXECUTABLES)
 	
 .PHONY: all clean check

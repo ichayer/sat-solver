@@ -25,7 +25,7 @@ typedef struct slaveManagerCDT {
     
     int maxfd;
     fd_set rfds;
-    int avilableData;       // rfds with avilable data
+    int availableData;       // rfds with available data
     int lastIndexRetrived;  // index of the last fd to read data from
     
     int * pendingFiles; // files that each slave has pending to process
@@ -72,31 +72,31 @@ slaveManagerADT newSlaveManager(char ** fileNames, int filesQty){
 
     sm->fdread = malloc(sm->slavesQty * sizeof(int));
     if(sm->fdread == NULL){
-        free(sm);
         free(sm->slavesPids);
+        free(sm);
         perrorExit("Error in malloc function");
     }
     
     sm->fdwrite = malloc(sm->slavesQty * sizeof(int));
     if(sm->fdwrite == NULL){
-        free(sm);
         free(sm->slavesPids);
         free(sm->fdread);
+        free(sm);
         perrorExit("Error in malloc function");
     }
 
     sm->pendingFiles = malloc(sm->slavesQty * sizeof(int));
     if(sm->pendingFiles == NULL){
-        free(sm);
         free(sm->slavesPids);
         free(sm->fdread);
         free(sm->fdwrite);
+        free(sm);
         perrorExit("Error in malloc function");
     }
 
     FD_ZERO(&(sm->rfds));
 
-    sm->avilableData = 0;
+    sm->availableData = 0;
     sm->slaveFiles = 0;
     sm->appFiles = 0;
 
@@ -146,6 +146,8 @@ int initializeSlaves(slaveManagerADT sm){
             execv("./slave", (char **){NULL});
             perrorExit("./slave");
             
+            break;
+            
         default:
             if (close(parentToChildren[READ]) == -1)
                 perrorExit("Error closing pipe");
@@ -156,6 +158,7 @@ int initializeSlaves(slaveManagerADT sm){
             sm->fdread[i] = childrenToParent[READ];
             sm->fdwrite[i] = parentToChildren[WRITE];
             sm->slavesPids[i] = pid;
+            sm->pendingFiles[i] = 0; 
 
             deliverFile(sm, i);
             deliverFile(sm, i);
@@ -170,16 +173,16 @@ int initializeSlaves(slaveManagerADT sm){
 
 int retriveData(slaveManagerADT sm, char * buffer, int bufferLimit){
     
-    if(sm->avilableData <= 0){
+    if(sm->availableData <= 0){
         setFds(sm->fdread, sm->slavesQty, &sm->rfds);
-        if((sm->avilableData = select(sm->maxfd + 1, &sm->rfds, NULL, NULL, NULL))==-1){
-            printf("%d\n", sm->avilableData);
+        if((sm->availableData = select(sm->maxfd + 1, &sm->rfds, NULL, NULL, NULL))==-1){
+            printf("%d\n", sm->availableData);
             perrorExit("Error in select function");
         }
         sm->lastIndexRetrived = -1;
     }
 
-    sm->avilableData-=1;
+    sm->availableData-=1;
     int idx = getIdxOfFdWithData(sm);   
     sm->appFiles++;
 
@@ -193,8 +196,9 @@ int retriveData(slaveManagerADT sm, char * buffer, int bufferLimit){
     buffer[i++] = '>';
     buffer[i] = 0;
 
-    if(sm->slaveFiles < sm->filesQty && !sm->pendingFiles[idx])
+    if((sm->slaveFiles < sm->filesQty) && (!sm->pendingFiles[idx])){
         deliverFile(sm, idx);  
+    }
 
     return i;
 }
@@ -207,6 +211,7 @@ void freeSlaveManager(slaveManagerADT sm){
         close(sm->fdread[i]);
     }
     
+    free(sm->pendingFiles);
     free(sm->fdread);
     free(sm->fdwrite);
     free(sm->slavesPids);

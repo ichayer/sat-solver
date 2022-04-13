@@ -30,16 +30,16 @@ int main(int argc, char *argv[]){
     int size = SLAVES_MAX_OUTPUT * filesQty;
     char ** files = &argv[1];
 
-    printf("%d\n", filesQty);
-
     posShmADT shm = newPosShmADT(SHM_NAME, SEM_NAME, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR, size, PROT_WRITE);
 
-    sleep(VIEW_PROCES_WAITTIME);
+    printf("%d\n", filesQty);
 
     slaveManagerADT sm = newSlaveManager(files, filesQty);
 
     initializeSlaves(sm);
 
+    sleep(VIEW_PROCES_WAITTIME);
+    
     char buffer[SLAVES_MAX_OUTPUT];
 
     while(hasNextData(sm)){
