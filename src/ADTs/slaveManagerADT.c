@@ -25,15 +25,23 @@ typedef struct slaveManagerCDT {
 } slaveManagerCDT;
 
 
+/** 
+ * Delivers a file to the slave of idx slaveIdx, just if there are avilable
+ * files to be sended, otherwise, it does nothing. It also increments the number
+ * of sended files. 
+ */
 static void deliverFile(slaveManagerADT sm, int slaveIdx);
+
+/**
+ * Searches the next fd with avilable data in the fdread vector from the sm
+ * using the fd_set rfds stored in the struct sm.
+ */
 static int getIdxOfFdWithData(slaveManagerADT sm);
+
+/**
+ * Frees memory to exit.
+ */
 static void safeSlaveManagerExit(slaveManagerADT sm, char * msg);
-
-void remapfd(int * fd, int idxFrom, int fdTo);
-int maxValue(int * vec, int qty, fd_set * rfds);
-void setFds(int * vec, int qty, fd_set * rfds);
-
-
 
 slaveManagerADT newSlaveManager(char ** fileNames, int filesQty){
     if(filesQty < 1 || fileNames == NULL)
@@ -136,7 +144,7 @@ int initializeSlaves(slaveManagerADT sm){
         }
     }
 
-    sm->maxfd = maxValue(sm->fdread, sm->slavesQty, &sm->rfds);
+    sm->maxfd = maxValue(sm->fdread, sm->slavesQty);
     return sm->slavesQty;
 }
 
@@ -193,24 +201,7 @@ void freeSlaveManager(slaveManagerADT sm){
     free(sm);
 }
 
-/*
-** asocia fd[idxFrom] a fdTo
-*/
-void remapfd(int * fd, int idxFrom, int fdTo){
-    if (fd[idxFrom] != fdTo){
-        
-        if (dup2(fd[idxFrom], fdTo) == -1)
-            perrorExit("Error in dup2 function");
-
-        if (close(fd[idxFrom]) == -1)
-            perrorExit("Error closing file descriptor");
-    
-    }
-}
-
-
-
-int getIdxOfFdWithData(slaveManagerADT sm){
+static int getIdxOfFdWithData(slaveManagerADT sm){
     for(int i=sm->lastIndexRetrived+1; i<sm->slavesQty ; ++i){
         if(FD_ISSET(sm->fdread[i],&sm->rfds)){
             return sm->lastIndexRetrived = i;
@@ -219,7 +210,7 @@ int getIdxOfFdWithData(slaveManagerADT sm){
     return -1;
 }
 
-void deliverFile(slaveManagerADT sm, int slaveIdx){
+static void deliverFile(slaveManagerADT sm, int slaveIdx){
     if(sm->slaveFiles < sm->filesQty){
         write(sm->fdwrite[slaveIdx], sm->fileNames[sm->slaveFiles], strlen(sm->fileNames[sm->slaveFiles]));
         write(sm->fdwrite[slaveIdx], "\n", 1);
@@ -228,22 +219,7 @@ void deliverFile(slaveManagerADT sm, int slaveIdx){
     }
 }
 
-int maxValue(int * vec, int qty, fd_set * rfds){    
-    int max = vec[0];
-    for(int i=1 ; i<qty ; ++i){
-        if(max < vec[i])
-            max = vec[i];
-    }
-    return max;
-}
-
-void setFds(int * vec, int qty, fd_set * rfds){
-    for(int i=0 ; i<qty ; ++i){
-        FD_SET(vec[i], rfds);
-    }
-}
-
-void safeSlaveManagerExit(slaveManagerADT sm, char * msg){
+static void safeSlaveManagerExit(slaveManagerADT sm, char * msg){
     freeSlaveManager(sm);
     perrorExit(msg);
 }
