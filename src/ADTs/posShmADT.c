@@ -70,7 +70,7 @@ posShmADT newPosShmADT(const char * shm_name, const char * sem_name, int oflags,
             perrorExit("Error in ftruncate function");
         }
     }
-
+    
     shm->shm_address = mmap(NULL, shm->shmSize, prot, MAP_SHARED, shm_fd, 0);
     if(MAP_FAILED == shm->shm_address){
         unlinkShm(shm);
@@ -117,12 +117,22 @@ void shmRead(posShmADT shm, char * buffer){
         perrorExit("Error reading shared memory");
     }
 
-    shm->shm_current_address += sprintf(buffer, "%s", shm->shm_current_address) + 1;
+    int offset; 
+    if((offset = sprintf(buffer, "%s", shm->shm_current_address)) < 0){
+        perrorExit("Error in sprintf function while reading shared memory");
+    }
+
+    shm->shm_current_address += offset + 1;
 }
 
 void shmWrite(posShmADT shm, char * buffer){    
 
-    shm->shm_current_address += sprintf(shm->shm_current_address, "%s", buffer) + 1;
+    int offset;
+    if((offset = sprintf(shm->shm_current_address, "%s", buffer)) < 0){
+        perrorExit("Error in sprintf function while writing shared memory");
+    }
+
+    shm->shm_current_address += offset + 1;
 
     if(-1 == sem_post(shm->sem)){
         shmClose(shm);
