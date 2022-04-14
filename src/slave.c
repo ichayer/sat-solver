@@ -49,10 +49,10 @@ int main(int argc, char *argv[]){
             char minisatOutput[SLAVES_MAX_OUTPUT];
             formatOutput(minisatOutput, commandStream, SLAVES_MAX_OUTPUT);      
 
-            printf("< File name: %s, slave ID: %d, %s >", fileName, getpid(), minisatOutput);
+            printf("File name: %s, slave ID: %d, %s \n", fileName, getpid(), minisatOutput);
         
         }else{
-            printf("< Invalid file path >");
+            printf("Invalid file path");
         }                
     }
     

@@ -1,16 +1,7 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 
-/* Standard library */
-#include <stdio.h>
-#include <sys/types.h>
-#include <stdlib.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <string.h>
-
 /* Local headers */
-#include "../include/lib.h"
 #include "../include/slaveManagerADT.h"
 
 
@@ -34,22 +25,15 @@ typedef struct slaveManagerCDT {
 } slaveManagerCDT;
 
 
-/*
-    1. Como se le asigna un nuevo fileName al esclavo una vez que termino? El problema es como identificar que termino. 
-       Le puedo asignar otro archivo para que analice cuando remuevo la informacion del pipe? O tengo que seguir dando tareas aunque no lea?
-    2. #define _GNU_SOURCE para reconocer getline??
-    3. Es necesario hacer un wait de los esclavos?
-    4. Chequear errores
-    5. Puedo definir una maxima cantidad de esclavos?
-    6. Esta bien liberar los esclavos cuando hacemos el free del adt?
-*/
+static void deliverFile(slaveManagerADT sm, int slaveIdx);
+static int getIdxOfFdWithData(slaveManagerADT sm);
+static void safeSlaveManagerExit(slaveManagerADT sm, char * msg);
 
-void deliverFile(slaveManagerADT sm, int slaveIdx);
 void remapfd(int * fd, int idxFrom, int fdTo);
-int hasNextData(slaveManagerADT sm);
-int getIdxOfFdWithData(slaveManagerADT sm);
 int maxValue(int * vec, int qty, fd_set * rfds);
 void setFds(int * vec, int qty, fd_set * rfds);
+
+
 
 slaveManagerADT newSlaveManager(char ** fileNames, int filesQty){
     if(filesQty < 1 || fileNames == NULL)
@@ -63,6 +47,10 @@ slaveManagerADT newSlaveManager(char ** fileNames, int filesQty){
     sm->fileNames = fileNames;
     sm->filesQty = filesQty;
     sm->slavesQty = filesQty/10 + 1;
+    FD_ZERO(&(sm->rfds));
+    sm->availableData = 0;
+    sm->slaveFiles = 0;
+    sm->appFiles = 0;
     
     sm->slavesPids = malloc(sm->slavesQty * sizeof(int));
     if(sm->slavesPids == NULL){
@@ -85,7 +73,7 @@ slaveManagerADT newSlaveManager(char ** fileNames, int filesQty){
         perrorExit("Error in malloc function");
     }
 
-    sm->pendingFiles = malloc(sm->slavesQty * sizeof(int));
+    sm->pendingFiles = calloc(sm->slavesQty, sizeof(int));
     if(sm->pendingFiles == NULL){
         free(sm->slavesPids);
         free(sm->fdread);
@@ -93,13 +81,6 @@ slaveManagerADT newSlaveManager(char ** fileNames, int filesQty){
         free(sm);
         perrorExit("Error in malloc function");
     }
-
-    FD_ZERO(&(sm->rfds));
-
-    sm->availableData = 0;
-    sm->slaveFiles = 0;
-    sm->appFiles = 0;
-
     return sm;
 }
 
@@ -110,56 +91,44 @@ int initializeSlaves(slaveManagerADT sm){
         int parentToChildren[2];
         int childrenToParent[2];
 
-        if (pipe(parentToChildren) == -1)
-            perrorExit("Error creating pipe");
-
-        if (pipe(childrenToParent) == -1)
-            perrorExit("Error creating pipe");
+        if (pipe(parentToChildren) == -1 || pipe(childrenToParent) == -1)
+            safeSlaveManagerExit(sm, "Error creating pipe");
 
         int pid = fork();
 
         switch (pid)
         {
         case -1:
-            exit(EXIT_FAILURE);
+            safeSlaveManagerExit(sm, "Error in fork");
 
         case 0:
 
-            if (close(parentToChildren[WRITE]) == -1)
-                perrorExit("Error closing pipe");
-
-            if (close(childrenToParent[READ]) == -1)
-                perrorExit("Error closing pipe");
+            if (close(parentToChildren[WRITE]) == -1 || close(childrenToParent[READ]) == -1)
+                safeSlaveManagerExit(sm, "Error closing pipe");
             
             // Close pipes that comunicate with previous slaves
             for(int j=0 ; j<i ; ++j){
-                if (close(sm->fdread[j]) == -1)
-                    perrorExit("Error closing pipe");
-
-                if (close(sm->fdwrite[j]) == -1)
-                    perrorExit("Error closing pipe");
+                if (close(sm->fdread[j]) == -1 || close(sm->fdwrite[j]) == -1)
+                    safeSlaveManagerExit(sm, "Error closing pipe");
             }
 
             remapfd(parentToChildren, READ, STDIN_FILENO);
             remapfd(childrenToParent, WRITE, STDOUT_FILENO);
 
             execv("./slave", (char **){NULL});
-            perrorExit("./slave");
+            safeSlaveManagerExit(sm, "Error with execv while trying to open ./slave");
             
             break;
             
         default:
-            if (close(parentToChildren[READ]) == -1)
-                perrorExit("Error closing pipe");
-
-            if (close(childrenToParent[WRITE]) == -1)
-                perrorExit("Error closing pipe");
+            if (close(parentToChildren[READ]) == -1 || close(childrenToParent[WRITE]) == -1)
+                safeSlaveManagerExit(sm, "Error closing pipe");
 
             sm->fdread[i] = childrenToParent[READ];
             sm->fdwrite[i] = parentToChildren[WRITE];
             sm->slavesPids[i] = pid;
-            sm->pendingFiles[i] = 0; 
 
+            //Each slave starts with two files
             deliverFile(sm, i);
             deliverFile(sm, i);
 
@@ -173,30 +142,32 @@ int initializeSlaves(slaveManagerADT sm){
 
 int retriveData(slaveManagerADT sm, char * buffer, int bufferLimit){
     
+    // retriveData returns the output of a file each time it is called.
+    // In sm->availableData is stored how many files had avilable data
+    // when select was called, so that no to call it unnecessary if it is
+    // already known that there was avilable data.
     if(sm->availableData <= 0){
         setFds(sm->fdread, sm->slavesQty, &sm->rfds);
         if((sm->availableData = select(sm->maxfd + 1, &sm->rfds, NULL, NULL, NULL))==-1){
-            printf("%d\n", sm->availableData);
-            perrorExit("Error in select function");
+            safeSlaveManagerExit(sm, "Error in select");
         }
         sm->lastIndexRetrived = -1;
     }
 
-    sm->availableData-=1;
-    int idx = getIdxOfFdWithData(sm);   
+    int idx = getIdxOfFdWithData(sm);
+    sm->availableData-=1;   
     sm->appFiles++;
 
     int i=0;
     char c;
 
-    while((read(sm->fdread[idx], &c, 1))>0 && c!='>' && c!='\0' && i<(bufferLimit-2)){
+    while((read(sm->fdread[idx], &c, 1))>0 && c!='\n' && c!='\0' && i<(bufferLimit-2)){
         buffer[i++] = c;
     }
-    sm->pendingFiles[idx]--;
-    buffer[i++] = '>';
     buffer[i++] = '\n';
     buffer[i] = 0;
 
+    sm->pendingFiles[idx]--;
     if((sm->slaveFiles < sm->filesQty) && (!sm->pendingFiles[idx])){
         deliverFile(sm, idx);  
     }
@@ -204,6 +175,9 @@ int retriveData(slaveManagerADT sm, char * buffer, int bufferLimit){
     return i;
 }
 
+int hasNextData(slaveManagerADT sm){
+    return sm->appFiles < sm->filesQty;
+}
 
 void freeSlaveManager(slaveManagerADT sm){
     
@@ -234,9 +208,7 @@ void remapfd(int * fd, int idxFrom, int fdTo){
     }
 }
 
-int hasNextData(slaveManagerADT sm){
-    return sm->appFiles < sm->filesQty;
-}
+
 
 int getIdxOfFdWithData(slaveManagerADT sm){
     for(int i=sm->lastIndexRetrived+1; i<sm->slavesQty ; ++i){
@@ -269,4 +241,9 @@ void setFds(int * vec, int qty, fd_set * rfds){
     for(int i=0 ; i<qty ; ++i){
         FD_SET(vec[i], rfds);
     }
+}
+
+void safeSlaveManagerExit(slaveManagerADT sm, char * msg){
+    freeSlaveManager(sm);
+    perrorExit(msg);
 }
