@@ -34,7 +34,7 @@ int main(int argc, char * argv[]){
 
     for(int i=0; i < filesQty; i++){
         shmRead(shm, buffer);
-        printf("%s\n", buffer);
+        printf("%s", buffer);
     }
     
     shmClose(shm);

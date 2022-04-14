@@ -42,13 +42,21 @@ int main(int argc, char *argv[]){
     
     char buffer[SLAVES_MAX_OUTPUT];
 
+    int fdOutputFile = open(OUTPUT_FILE_NAME, O_CREAT|O_WRONLY|O_TRUNC, WR_ALL);
+    if(fdOutputFile == -1)
+        perrorExit("Error opening output file");
+
+    int readData;
+
     while(hasNextData(sm)){
-        retriveData(sm, buffer, SLAVES_MAX_OUTPUT);
+        readData = retriveData(sm, buffer, SLAVES_MAX_OUTPUT);
+        write(fdOutputFile, buffer, readData);
         shmWrite(shm, buffer);
     } 
 
     freeSlaveManager(sm);   
     shmClose(shm);   
-
+    close(fdOutputFile);
+    
     return 0;
 }

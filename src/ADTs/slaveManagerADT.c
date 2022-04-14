@@ -194,6 +194,7 @@ int retriveData(slaveManagerADT sm, char * buffer, int bufferLimit){
     }
     sm->pendingFiles[idx]--;
     buffer[i++] = '>';
+    buffer[i++] = '\n';
     buffer[i] = 0;
 
     if((sm->slaveFiles < sm->filesQty) && (!sm->pendingFiles[idx])){
