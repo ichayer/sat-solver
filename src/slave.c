@@ -16,7 +16,7 @@
 #include "./include/lib.h"
 
 /* Constants */
-#define MAX_COMMAND_LENGTH 4096
+#define MAX_COMMAND_LENGTH 4196
 #define MINISAT_COMMAND "minisat %s | grep -o -e \"Number of.*[0-9]\\+\" -e \"CPU time.*\" -e \".*SATISFIABLE\""
 
 /**

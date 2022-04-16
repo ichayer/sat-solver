@@ -11,7 +11,7 @@
 #include <string.h>
 
 /* Constants */
-#define SLAVES_MAX_OUTPUT 4096
+#define SLAVES_MAX_OUTPUT 4196
 #define OUTPUT_FILE_NAME "results.txt"
 #define WR_ALL 00666
 
