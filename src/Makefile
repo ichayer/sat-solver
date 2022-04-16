@@ -3,6 +3,8 @@ GCCFLAGS = -g -Wall -std='c99' -lpthread -lrt
 
 EXECUTABLES := solve slave view
 
+OUTPUT = results.txt
+
 EXEC = Application Slave View
 
 APPLICATION_C = application.c
@@ -33,6 +35,7 @@ View:
 
 clean:
 	@rm -rf $(EXECUTABLES)
+	@rm -rf $(OUTPUT)
 	@rm -rf check
 
 check:
@@ -45,9 +48,5 @@ check:
 	
 	@mv strace_out check
 	@rm PVS-Studio.log
-
-	@valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -v ./solve samples/* > /dev/null 2> ./check/solve.valgrind
-	@valgrind --leak-check=full --show-leak-kinds=all  --track-origins=yes -v ./solve samples/* > ./view  2> ./check/pipe.valgrind	
-	@rm -rf $(EXECUTABLES)
 	
 .PHONY: all clean check

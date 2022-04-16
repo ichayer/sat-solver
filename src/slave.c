@@ -19,19 +19,25 @@
 #define MAX_COMMAND_LENGTH 4096
 #define MINISAT_COMMAND "minisat %s | grep -o -e \"Number of.*[0-9]\\+\" -e \"CPU time.*\" -e \".*SATISFIABLE\""
 
-void formatOutput(char * minisatOutput, FILE * commandStream, int maxDim);
-int validPath(char * path);
+/**
+ * Formats the output produced by minisat
+ */
+static void formatOutput(char * minisatOutput, FILE * commandStream, int maxDim);
+
+/**
+ * Checks if the given path is a regular file
+ */
+static int validPath(char * path);
 
 int main(int argc, char *argv[]){
 
     // read from stdin
     char * fileName = NULL;
     size_t lineCap = 0;
-    ssize_t lineLen;  
 
     setvbuf(stdout, NULL, _IONBF, 0);
    
-    while ((lineLen = getline(&fileName, &lineCap, stdin)) > 0){
+    while (getline(&fileName, &lineCap, stdin) > 0){
 
         fileName[strcspn(fileName, "\n")] = 0;  // https://stackoverflow.com/questions/2693776/removing-trailing-newline-character-from-fgets-input
 
@@ -43,40 +49,30 @@ int main(int argc, char *argv[]){
             }
             
             FILE * commandStream = popen(command, "r");
-            if(commandStream==NULL)
+            if(NULL == commandStream)
                 perrorExit("Error in popen function");
             
             char minisatOutput[SLAVES_MAX_OUTPUT];
             formatOutput(minisatOutput, commandStream, SLAVES_MAX_OUTPUT);      
 
-            printf("< File name: %s, slave ID: %d, %s >", fileName, getpid(), minisatOutput);
+            printf("File name: %s, slave ID: %d, %s \n", fileName, getpid(), minisatOutput);
         
         }else{
-            printf("< Invalid file path >");
+            printf("Invalid file path");
         }                
     }
-    
+
     free(fileName);
     close(STDIN_FILENO);
     return 0;
 }
 
-
-/**
- * @brief Checks if the given path is a regular file.
- * 
- * @param path the path of the file.
- * 
- * @return int 0 if not, 1 if regular. 
- * 
- * @note in case of error returns 0 with errno set.
- */
-int validPath(char * path){
+static int validPath(char * path){
     struct stat check;
     return stat(path, &check) >= 0 && S_ISREG(check.st_mode);
 }
 
-void formatOutput(char * minisatOutput,  FILE * commandStream, int maxDim){
+static void formatOutput(char * minisatOutput,  FILE * commandStream, int maxDim){
     int c;
     int i=0;
 
