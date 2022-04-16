@@ -1,6 +1,21 @@
 #ifndef __POS_SHM_ADT_H__
 #define __POS_SHM_ADT_H__
 
+/* Standard library */
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <fcntl.h> 
+#include <sys/stat.h>  
+#include <sys/mman.h>
+#include <stdlib.h>
+#include <semaphore.h>
+#include <stdbool.h>
+
+/* Local headers */
+#include "../include/lib.h"
+
 /* Constants */
 #define SHM_NAME "myShm"
 #define SEM_NAME "mySem"
@@ -19,23 +34,21 @@ typedef struct posShmCDT * posShmADT;
  * 
  * @return posShmADT returns a handler of the shared memory and the synchronization between processes
  */
-posShmADT newPosShmADT(const char * shm_name, const char * sem_name, int oflags, int mode, int shmSize, int prot);
+posShmADT newPosShmADT(const char * shm_name, const char * sem_name, int oflags, mode_t mode, unsigned int shmSize, int prot);
 
 /**
- * @brief Unmaps the shared memory
+ * @brief Unmap the shared memory
  *        Frees semaphore's resources
- *        Unlinks the shared memory and sempahore
+ *        Unlinks the shared memory and sempahore if shm->creator is true
  *        Frees the handler
  * 
  * @param shm a posShmADT previously created
- * @param master references the calling process: true -> master ; false -> view
  */
 void shmClose(posShmADT shm);
 
 /**
  * @brief Consecutive calls will be appended
  *        Writes into the shared memory
- *        
  * 
  * @param shm a posShmADT previously created
  * @param buffer string to be written into the shared memory

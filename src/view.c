@@ -16,6 +16,7 @@
 int main(int argc, char * argv[]){
 
     int error=0, filesQty=0;
+    
     if(argc > 1){
         error = sscanf(argv[1], "%d", &filesQty);    // https://stackoverflow.com/questions/35397273/how-to-use-sscanf-with-argv
     } else {

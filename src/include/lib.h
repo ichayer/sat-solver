@@ -12,8 +12,7 @@
 
 /* Constants */
 #define SLAVES_MAX_OUTPUT 4096
-
-#define OUTPUT_FILE_NAME "resultado.txt"
+#define OUTPUT_FILE_NAME "results.txt"
 #define WR_ALL 00666
 
 /** 
@@ -26,19 +25,23 @@ void perrorExit(char * message);
 /**
  * @brief Maps one file descriptor to another.  
  * 
- * @param fd vector of fd
- * @param idxFrom index of the file descriptor that will be remaped
- * @param fdTo fd that the fd[idxFrom] fd will be mapped to
+ * @param fd vector of file descriptors
+ * @param idxFrom index of the file descriptor that will be remapped
+ * @param fdTo file descriptor that the fd[idxFrom] file descriptor will be mapped to
  */
 void remapfd(int * fd, int idxFrom, int fdTo);
 
 /**
- * @brief returns the max value of a vector
+ * @brief Returns the max value of a vector
+ * 
+ * @param vec vector to analyze
+ * @param qty vector size
  */
 int maxValue(int * vec, int qty);
 
 /**
- * @brief Set the Fds in vec in rfds
+ * @brief Set the file descriptors in vec in rfds
+ * 
  */
 void setFds(int * vec, int qty, fd_set * rfds);
 

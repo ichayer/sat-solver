@@ -43,20 +43,29 @@ int main(int argc, char *argv[]){
     char buffer[SLAVES_MAX_OUTPUT];
 
     int fdOutputFile = open(OUTPUT_FILE_NAME, O_CREAT|O_WRONLY|O_TRUNC, WR_ALL);
-    if(fdOutputFile == -1)
-        perrorExit("Error opening output file");
 
-    int readData;
+    if(-1 == fdOutputFile){
+        shmClose(shm);
+        freeSlaveManager(sm);   
+        perrorExit("Error opening output file");   
+    }
 
     while(hasNextData(sm)){
-        readData = retriveData(sm, buffer, SLAVES_MAX_OUTPUT);
-        write(fdOutputFile, buffer, readData);
+        int readData = retriveData(sm, buffer, SLAVES_MAX_OUTPUT);
+        if(-1 == write(fdOutputFile, buffer, readData)){
+            shmClose(shm);
+            freeSlaveManager(sm);   
+            perrorExit("Error writing in file");
+        }
         shmWrite(shm, buffer);
     } 
-
+        
     freeSlaveManager(sm);   
-    shmClose(shm);   
-    close(fdOutputFile);
+    shmClose(shm);
+     
+    if(-1 == close(fdOutputFile)){
+        perrorExit("Error closing file descriptor");
+    }  
     
     return 0;
 }

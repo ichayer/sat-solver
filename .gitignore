@@ -1,13 +1,16 @@
 # Created by https://www.toptal.com/developers/gitignore/api/c,jetbrains,visualstudio,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=c,jetbrains,visualstudio,visualstudiocode
 
-### Bash ###
-.bash_history
-.bashrc
+### SAT-Solver ###
 check
+results.txt
 solve
 slave
 view
+
+### Bash ###
+.bash_history
+.bashrc
 
 ### C ###
 # Prerequisites

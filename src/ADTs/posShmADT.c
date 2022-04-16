@@ -1,20 +1,7 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 
-/* Standard library */
-#define _GNU_SOURCE
-#include <stdio.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <fcntl.h> 
-#include <sys/stat.h>  
-#include <sys/mman.h>
-#include <stdlib.h>
-#include <semaphore.h>
-#include <stdbool.h>
-
 /* Local headers */
-#include "../include/lib.h"
 #include "../include/posShmADT.h"
 
 typedef struct posShmCDT {
@@ -27,31 +14,30 @@ typedef struct posShmCDT {
     bool creator;                       
 } posShmCDT;
 
+/**
+ * Frees memory
+ */
+static void freeShm(posShmADT shm);
 
-static void freeShm(posShmADT shm){
-    free(shm);
-}
+/**
+*  Unlinks named semaphore stored in struct
+*/
+static void unlinkSem(posShmADT shm);
 
-static void unlinkSem(posShmADT shm){
-    if(-1 == sem_unlink(shm->sem_name)){
-        perrorExit("Error unlinking semaphore");
-    }
-}
+/**
+ * Unlinks shared memory stored in struct
+ */
+static void unlinkShm(posShmADT shm);
 
-static void unlinkShm(posShmADT shm){
+posShmADT newPosShmADT(const char * shm_name, const char * sem_name, int oflags, mode_t mode, unsigned int shmSize, int prot) {
 
-    if(-1 == shm_unlink(shm->shm_name)){
-        perrorExit("Error unlinking shared memory");
-    }
-}
-
-posShmADT newPosShmADT(const char * shm_name, const char * sem_name, int oflags, int mode, int shmSize, int prot) {
+    if(NULL == shm_name || NULL == sem_name)
+       perrorExit("Invalid parameters for newPosShmADT");
 
     posShmADT shm = calloc(1, sizeof(posShmCDT)); 
     
-    if(NULL == shm) {
+    if(NULL == shm) 
         perrorExit("Error initializing shared memory");
-    }
     
     shm->sem_name = sem_name;
     shm->shm_name = shm_name;
@@ -109,7 +95,10 @@ posShmADT newPosShmADT(const char * shm_name, const char * sem_name, int oflags,
 } 
 
 void shmRead(posShmADT shm, char * buffer){
- 
+    
+    if(NULL ==  shm || NULL == buffer)
+        perrorExit("Invalid parameters for shmRead");
+
     if(-1 == sem_wait(shm->sem)){
         unlinkSem(shm);
         unlinkShm(shm);
@@ -118,6 +107,7 @@ void shmRead(posShmADT shm, char * buffer){
     }
 
     int offset; 
+
     if((offset = sprintf(buffer, "%s", shm->shm_current_address)) < 0){
         perrorExit("Error in sprintf function while reading shared memory");
     }
@@ -127,7 +117,11 @@ void shmRead(posShmADT shm, char * buffer){
 
 void shmWrite(posShmADT shm, char * buffer){    
 
+    if(NULL ==  shm || NULL == buffer)
+        perrorExit("Invalid parameters for shmWrite");
+
     int offset;
+
     if((offset = sprintf(shm->shm_current_address, "%s", buffer)) < 0){
         perrorExit("Error in sprintf function while writing shared memory");
     }
@@ -141,6 +135,9 @@ void shmWrite(posShmADT shm, char * buffer){
 }
 
 void shmClose(posShmADT shm){
+
+    if(NULL == shm)
+        perror("Invalid parameters for shmClose");
 
     if(-1 == munmap(shm->shm_address, shm->shmSize)){
         unlinkSem(shm);
@@ -164,4 +161,18 @@ void shmClose(posShmADT shm){
     freeShm(shm);
 }
 
+static void freeShm(posShmADT shm){
+    free(shm);
+}
 
+static void unlinkSem(posShmADT shm){
+    if(-1 == sem_unlink(shm->sem_name)){
+        perrorExit("Error unlinking semaphore");
+    }
+}
+
+static void unlinkShm(posShmADT shm){
+    if(-1 == shm_unlink(shm->shm_name)){
+        perrorExit("Error unlinking shared memory");
+    }
+}
