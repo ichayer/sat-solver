@@ -58,7 +58,7 @@ int main(int argc, char *argv[]){
             printf("File name: %s, slave ID: %d, %s \n", fileName, getpid(), minisatOutput);
         
         }else{
-            printf("Invalid file path");
+            printf("Invalid file '%s'\n", fileName);
         }                
     }
 
