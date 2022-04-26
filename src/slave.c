@@ -56,12 +56,16 @@ int main(int argc, char *argv[]){
             formatOutput(minisatOutput, commandStream, SLAVES_MAX_OUTPUT);      
 
             printf("File name: %s, slave ID: %d, %s \n", fileName, getpid(), minisatOutput);
-        
+
+            if(-1 == pclose(commandStream)){
+                perrorExit("Error in pclose function");
+            }
+
         }else{
             printf("Invalid file '%s'\n", fileName);
         }                
     }
-
+    
     free(fileName);
     close(STDIN_FILENO);
     return 0;

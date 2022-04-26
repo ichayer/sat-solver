@@ -20,7 +20,7 @@ typedef struct slaveManagerCDT {
     
     int * pendingFiles; // files that each slave has pending to process
     int slaveFiles;     // qty of files that had been sended to the slaves
-    int appFiles;       // qty of files that the been sended to the app
+    int appFiles;       // qty of files that had been sended to the app
 } slaveManagerCDT;
 
 /** 
@@ -241,7 +241,7 @@ static void deliverFile(slaveManagerADT sm, int slaveIdx){
 static void safeSlaveManagerExit(slaveManagerADT sm, char * msg){
 
     if(NULL == sm)
-        perrorExit("Invalid parametrs for safeSlaveManagerExit");
+        perrorExit("Invalid parameters for safeSlaveManagerExit");
 
     freeSlaveManager(sm);
     perrorExit(msg);
